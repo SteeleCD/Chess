@@ -33,15 +33,29 @@ playChess <- function(AI=NULL)
 
 		{
 
+		legal = FALSE
+
 		if(nturn%%2==0) currentPieces=LETTERS else currentPieces=letters
 
 		if(aiTurn)
 
 			{
 
-			# get AI turn
+			while(!legal)
+		
+				{
 
-			move = greedyAImove(board,numMoves,current=aiPieces)
+				# get AI turn
+
+				move = greedyAImove(board,numMoves,current=aiPieces)
+
+				# Move the piece
+	
+				info <- movePiece(info$board,info$numMoves,move$currY,move$currX,move$futureY,move$futureX)
+
+				legal = info$legal
+
+				}
 
 			} else {
 
@@ -51,7 +65,7 @@ playChess <- function(AI=NULL)
 
 			# If player has clicked on an invalid square ask for another move
 
-			while(info$board[move$currY,move$currX]==""|info$board[move$currY,move$currX]!%in%currentPieces) 
+			while(!info$board[move$currY,move$currX]%in%currentPieces|!legal) 
 
 				{
 
@@ -63,7 +77,7 @@ playChess <- function(AI=NULL)
 
 					print("Not a piece")
 
-					} else if(currentMove!%in%currentPieces) {
+					} else if(!currentMove%in%currentPieces) {
 
 					print("Enemies piece")
 
@@ -77,13 +91,15 @@ playChess <- function(AI=NULL)
 
 				move <- getMove()
 
+				# Move the desired piece
+
+				info <- movePiece(info$board,info$numMoves,move$currY,move$currX,move$futureY,move$futureX)
+
+				legal = info$legal
+
 				}
 			
 			}
-
-		# Move the desired piece
-
-		info <- movePiece(info$board,info$numMoves,move$currY,move$currX,move$futureY,move$futureX)
 
 		displayBoard(info$board)
 
@@ -294,6 +310,29 @@ getScore = function(takenPiece)
 	}
 
 
+#===================== King in Check ============================
+
+isKingInCheck = function(board,kingRow,kingCol)
+	{
+
+	if(board[kingRow,kingCol]=="k") 
+		{
+
+		enemy = LETTERS
+
+		} else {
+
+		enemy = letters
+
+		}
+
+	enemyMoves = opposingTeamMoves(board,numMoves,enemy)
+
+	return(enemyMoves[kingRow,kingCol])
+
+	}
+
+
 #===================== Move a piece ============================
 
 movePiece <- function(board,numMoves,currRow,currCol,nextRow,nextCol) 
@@ -310,7 +349,7 @@ movePiece <- function(board,numMoves,currRow,currCol,nextRow,nextCol)
 
 		flush.console()
 
-		return(board)
+		return(list(board=board,numMoves=numMoves,score=0,legal=FALSE))
 
 		}
 
@@ -324,9 +363,11 @@ movePiece <- function(board,numMoves,currRow,currCol,nextRow,nextCol)
 
 		flush.console()
 
-		return(board)
+		return(list(board=board,numMoves=numMoves,score=0,legal=FALSE))
 
-		}	
+		}
+
+	
 
 	# Get the legal moves of the current piece
 
@@ -337,6 +378,40 @@ movePiece <- function(board,numMoves,currRow,currCol,nextRow,nextCol)
 	if(movementMatrix[nextRow,nextCol]==TRUE)
 
 		{ 
+
+		# is king in check
+
+		if(board[currRow,currCol]%in%letters) king="k" else king="K"
+
+		inCheck = isKingInCheck(board,row(board)[which(board==king)],col(board)[which(board==king)])
+
+		if(inCheck)
+
+			{
+
+			# does the move get out of check
+
+			tmpBoard = board
+
+			tmpBoard[nextRow,nextCol] =  tmpBoard[curRow,curCol]
+
+			tmpBoard[curRow,curCol] = ""
+
+			newInCheck = isKingInCheck(tmpBoard,row(tmpBoard)[which(tmpBoard==king)],col(tmpBoard)[which(tmpBoard==king)])
+
+			if(newInCheck)
+
+				{
+
+				print("King still in check")
+
+				flush.console()
+
+				return(list(board=board,numMoves=numMoves,score=0,legal=FALSE))
+
+				}
+
+			} 	
 
 		# Scoring
 
@@ -406,7 +481,7 @@ movePiece <- function(board,numMoves,currRow,currCol,nextRow,nextCol)
 
 		print(board)
 
-		return(list(board=board,numMoves=numMoves,score=score))
+		return(list(board=board,numMoves=numMoves,score=score,legal=TRUE))
 
 		} else {
 
@@ -416,7 +491,7 @@ movePiece <- function(board,numMoves,currRow,currCol,nextRow,nextCol)
 
 		print(board)
 
-		return(list(board=board,numMoves=numMoves,score=0))
+		return(list(board=board,numMoves=numMoves,score=0,legal=FALSE))
 
 		}
 
@@ -1289,7 +1364,7 @@ pawnSwap <- function(board,Row,Col)
 
 	if(board[Row,Col]=="p") choices = tolower(choices)
 
-	while(choice>4)
+	while(choice!%in%c(1:4))
 
 		{
 
