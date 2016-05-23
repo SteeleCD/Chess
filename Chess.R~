@@ -9,6 +9,21 @@ playChess <- function(AI=NULL)
 	info <- createBoard()
 
 	nturn = 1
+	
+	if(AI!=NULL) 
+
+		{
+
+		aiTurn = AI==nturn
+
+		aiPieces = c("lower","upper")[AI]
+
+		} else {
+
+		aiTurn = FALSE
+
+		}
+
 
 	# If no check mate
 
@@ -18,22 +33,52 @@ playChess <- function(AI=NULL)
 
 		{
 
-		# Ask for a move from the player
+		if(nturn%%2==0) currentPieces=LETTERS else currentPieces=letters
 
-		move <- getMove()
-
-		# If player has clicked on an empty square ask for another move
-
-		while(info$board[move$currY,move$currX]=="") 
+		if(aiTurn)
 
 			{
 
-			print("Not a piece")
+			# get AI turn
 
-			flush.console()
+			move = greedyAImove(board,numMoves,current=aiPieces)
+
+			} else {
+
+			# Ask for a move from the player
 
 			move <- getMove()
 
+			# If player has clicked on an invalid square ask for another move
+
+			while(info$board[move$currY,move$currX]==""|info$board[move$currY,move$currX]!%in%currentPieces) 
+
+				{
+
+				currentMove = info$board[move$currY,move$currX]
+
+				if(currentMove=="") 
+
+					{
+
+					print("Not a piece")
+
+					} else if(currentMove!%in%currentPieces) {
+
+					print("Enemies piece")
+
+					} else {
+
+					print("Error")
+
+					}
+				 
+				flush.console()
+
+				move <- getMove()
+
+				}
+			
 			}
 
 		# Move the desired piece
@@ -59,31 +104,46 @@ playChess <- function(AI=NULL)
 
 		nturn = nturn + 1
 
+		# change AI turn counter
+
+		if(AI!=NULL) aiTurn = !aiTurn
+
 		}
 
 	}
 
 #===================== AI move ================================
+
 # get score for all moves possible from selected piece
 
 aiMove = function(board,numMoves,currRow,currCol)
+
 	{
+
+	# get all legal moves for this piece
 
 	movementMatrix <- movementRules(board,numMoves,currRow,currCol)
 
 	index = which(movementMatrix)
 
+	# get scores of possible movements
+
 	scores = sapply(1:length(index), FUN=function(x) movePiece(board,numMoves,currRow,currCol,row(movementMatrix)[index[x]],col(movementMatrix)[index[x]])$score)
+
+	# get top score
 
 	topIndex = which.max(scores)
 
 	equal = which(scores==scores[topIndex])
 
+	# randomly choose one move amongst all with top score
+
 	choice = sample(equal,1)
 
 	out = c(scores[choice],row(movementMatrix)[index[choice]],row(movementMatrix)[index[choice]])
 
-	return(which(movementMatrix))
+	return(out)
+
 	}
 
 
@@ -94,6 +154,8 @@ aiMove = function(board,numMoves,currRow,currCol)
 greedyAImove = function(board,numMoves,current="upper")
 
 	{
+
+	# set which pieces are AI
 
 	if(current=="upper")
 
@@ -107,9 +169,15 @@ greedyAImove = function(board,numMoves,current="upper")
 
 		}
 
+	# get best moves for every piece
+
 	moveScores = sapply(mine,FUN=function(x) aiMove(board,numMoves,row(board)[mine[x]],col(board)[mine[x]]))
 
+	# get top score
+
 	topScore = which.max(moveScores[,1])
+
+	# choose randomly among all best scores
 
 	equal = which(moveScores[,1]==moveScores[,1][topScore])
 
@@ -123,8 +191,6 @@ greedyAImove = function(board,numMoves,current="upper")
 
 			futureY = moveScores[choice,3]))
 		
-		
-
 	}
 
 
