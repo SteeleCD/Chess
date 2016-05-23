@@ -299,7 +299,7 @@ getScore = function(takenPiece)
 
 	if(takenPiece%in%c("p","P")) return(1)
 
-	if(takenPiece%in%c("h","H")) return(3)
+	if(takenPiece%in%c("n","N")) return(3)
 
 	if(takenPiece%in%c("b","B")) return(3)
 
