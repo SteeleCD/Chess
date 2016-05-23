@@ -104,7 +104,7 @@ playChess <- function(AI=NULL)
 
 		nturn = nturn + 1
 
-		# change AI turn counter
+		# change AI turn flag
 
 		if(AI!=NULL) aiTurn = !aiTurn
 

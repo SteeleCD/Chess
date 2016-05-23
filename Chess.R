@@ -1289,7 +1289,7 @@ pawnSwap <- function(board,Row,Col)
 
 	if(board[Row,Col]=="p") choices = tolower(choices)
 
-	while(choice>4)
+	while(choice!%in%c(1:4))
 
 		{
 
