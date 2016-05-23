@@ -47,14 +47,9 @@ playChess <- function(AI=NULL)
 
 				# get AI turn
 
-				print("move")
-
 				move = greedyAImove(info$board,info$numMoves,current=aiPieces)
-MOVE<<-move
 
 				# Move the piece
-
-				print("info")
 	
 				tmpInfo <- movePiece(info$board,info$numMoves,move$currY,move$currX,move$futureY,move$futureX)
 
@@ -108,9 +103,9 @@ MOVE<<-move
 			
 			}
 
-		print("after")
-
 		info = tmpInfo
+
+		print(info$board)
 
 		displayBoard(info$board)
 
@@ -197,14 +192,12 @@ greedyAImove = function(board,numMoves,current="upper")
 		mine = which(board%in%letters)
 
 		}
-print(mine)
+
 	# get best moves for every piece
-print("moveScores")
 
 	moveScores = t(sapply(1:length(mine),FUN=function(x) aiMove(board,numMoves,row(board)[mine[x]],col(board)[mine[x]])))
 
 	# get top score
-print("topScore")
 
 	topScore = which.max(moveScores[,1])
 
@@ -504,10 +497,6 @@ movePiece <- function(board,numMoves,currRow,currCol,nextRow,nextCol)
 				}
 
 			}
-
-		# print board
-
-		print(board)
 
 		return(list(board=board,numMoves=numMoves,score=score,legal=TRUE))
 
@@ -826,6 +815,8 @@ RookMovements <- function(board,numMoves,currRow,currCol,enemy)
 
 					allowed[nextRowPoss,currCol] = TRUE
 
+					break
+
 					} else {
 
 					break
@@ -870,6 +861,8 @@ RookMovements <- function(board,numMoves,currRow,currCol,enemy)
 
 					allowed[nextRowPoss,currCol] = TRUE
 
+					break
+
 					} else {break}
 
 				}
@@ -911,6 +904,8 @@ RookMovements <- function(board,numMoves,currRow,currCol,enemy)
 					{ 
 
 					allowed[currRow,nextColPoss] = TRUE
+	
+					break
 
 					} else {break}
 
@@ -951,6 +946,8 @@ RookMovements <- function(board,numMoves,currRow,currCol,enemy)
 					{ 
 
 					allowed[currRow,nextColPoss] = TRUE
+
+					break
 
 					} else {break}
 
@@ -1117,6 +1114,8 @@ BishopMovements <- function(board,currRow,currCol,enemy)
 					{ 
 
 					allowed[nextRowPoss,nextColPoss] = TRUE
+
+					break
 
 					} else {break}
 
