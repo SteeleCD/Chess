@@ -10,7 +10,7 @@ playChess <- function(AI=NULL)
 
 	nturn = 1
 	
-	if(AI!=NULL) 
+	if(!is.null(AI)) 
 
 		{
 
@@ -47,27 +47,36 @@ playChess <- function(AI=NULL)
 
 				# get AI turn
 
-				move = greedyAImove(board,numMoves,current=aiPieces)
+				print("move")
+
+				move = greedyAImove(info$board,info$numMoves,current=aiPieces)
+MOVE<<-move
 
 				# Move the piece
-	
-				info <- movePiece(info$board,info$numMoves,move$currY,move$currX,move$futureY,move$futureX)
 
-				legal = info$legal
+				print("info")
+	
+				tmpInfo <- movePiece(info$board,info$numMoves,move$currY,move$currX,move$futureY,move$futureX)
+
+				legal = tmpInfo$legal
 
 				}
 
 			} else {
 
-			# Ask for a move from the player
-
-			move <- getMove()
-
 			# If player has clicked on an invalid square ask for another move
+			
+			currentTeam = FALSE
 
-			while(!info$board[move$currY,move$currX]%in%currentPieces|!legal) 
+			while(!currentTeam|!legal) 
 
 				{
+
+				flush.console()
+
+				# Ask for a move from the player
+
+				move <- getMove()
 
 				currentMove = info$board[move$currY,move$currX]
 
@@ -83,23 +92,25 @@ playChess <- function(AI=NULL)
 
 					} else {
 
-					print("Error")
+					print("OK")
 
 					}
-				 
-				flush.console()
-
-				move <- getMove()
 
 				# Move the desired piece
 
-				info <- movePiece(info$board,info$numMoves,move$currY,move$currX,move$futureY,move$futureX)
+				currentTeam = info$board[move$currY,move$currX]%in%currentPieces
 
-				legal = info$legal
+				tmpInfo <- movePiece(info$board,info$numMoves,move$currY,move$currX,move$futureY,move$futureX)
+
+				legal = tmpInfo$legal
 
 				}
 			
 			}
+
+		print("after")
+
+		info = tmpInfo
 
 		displayBoard(info$board)
 
@@ -122,7 +133,7 @@ playChess <- function(AI=NULL)
 
 		# change AI turn flag
 
-		if(AI!=NULL) aiTurn = !aiTurn
+		if(!is.null(AI)) aiTurn = !aiTurn
 
 		}
 
@@ -142,6 +153,8 @@ aiMove = function(board,numMoves,currRow,currCol)
 
 	index = which(movementMatrix)
 
+	if(length(index)==0) return(c(-1,-1,-1))
+
 	# get scores of possible movements
 
 	scores = sapply(1:length(index), FUN=function(x) movePiece(board,numMoves,currRow,currCol,row(movementMatrix)[index[x]],col(movementMatrix)[index[x]])$score)
@@ -156,7 +169,7 @@ aiMove = function(board,numMoves,currRow,currCol)
 
 	choice = sample(equal,1)
 
-	out = c(scores[choice],row(movementMatrix)[index[choice]],row(movementMatrix)[index[choice]])
+	out = c(scores[choice],row(movementMatrix)[index[choice]],col(movementMatrix)[index[choice]])
 
 	return(out)
 
@@ -184,12 +197,14 @@ greedyAImove = function(board,numMoves,current="upper")
 		mine = which(board%in%letters)
 
 		}
-
+print(mine)
 	# get best moves for every piece
+print("moveScores")
 
-	moveScores = sapply(mine,FUN=function(x) aiMove(board,numMoves,row(board)[mine[x]],col(board)[mine[x]]))
+	moveScores = t(sapply(1:length(mine),FUN=function(x) aiMove(board,numMoves,row(board)[mine[x]],col(board)[mine[x]])))
 
 	# get top score
+print("topScore")
 
 	topScore = which.max(moveScores[,1])
 
@@ -197,15 +212,15 @@ greedyAImove = function(board,numMoves,current="upper")
 
 	equal = which(moveScores[,1]==moveScores[,1][topScore])
 
-	choice = sample(moveScores[,1][equal])
+	choice = sample(1:length(moveScores[,1][equal]),1)
 
-	return(list(currX = row(board)[mine[x]], 
+	return(list(currX = col(board)[mine[equal[choice]]], 
 
-			currY = col(board)[mine[x]], 
+			currY = row(board)[mine[equal[choice]]], 
 
-			futureX = moveScores[choice,2], 
+			futureX = moveScores[choice,3], 
 
-			futureY = moveScores[choice,3]))
+			futureY = moveScores[choice,2]))
 		
 	}
 
@@ -299,7 +314,7 @@ getScore = function(takenPiece)
 
 	if(takenPiece%in%c("p","P")) return(1)
 
-	if(takenPiece%in%c("h","H")) return(3)
+	if(takenPiece%in%c("n","N")) return(3)
 
 	if(takenPiece%in%c("b","B")) return(3)
 
@@ -312,7 +327,7 @@ getScore = function(takenPiece)
 
 #===================== King in Check ============================
 
-isKingInCheck = function(board,kingRow,kingCol)
+isKingInCheck = function(board,numMoves,kingRow,kingCol)
 	{
 
 	if(board[kingRow,kingCol]=="k") 
@@ -373,6 +388,16 @@ movePiece <- function(board,numMoves,currRow,currCol,nextRow,nextCol)
 
 	movementMatrix <- movementRules(board,numMoves,currRow,currCol)
 
+	# castling bool
+
+	condition1 = board[currRow,currCol]%in%c("k","K")
+
+	moveDiff = currCol-nextCol
+
+	condition2 = abs(moveDiff)==2
+
+	castleBool = condition1&condition2
+	
 	# If the proposed next move is legal
 
 	if(movementMatrix[nextRow,nextCol]==TRUE)
@@ -383,7 +408,7 @@ movePiece <- function(board,numMoves,currRow,currCol,nextRow,nextCol)
 
 		if(board[currRow,currCol]%in%letters) king="k" else king="K"
 
-		inCheck = isKingInCheck(board,row(board)[which(board==king)],col(board)[which(board==king)])
+		inCheck = isKingInCheck(board,numMoves,row(board)[which(board==king)],col(board)[which(board==king)])
 
 		if(inCheck)
 
@@ -448,14 +473,9 @@ movePiece <- function(board,numMoves,currRow,currCol,nextRow,nextCol)
 			}
 
 		# if castling move rook
-		
-		condition1 = board[currRow,currCol]%in%c("k","K")
 
-		moveDiff = currCol-nextCol
 
-		condition2 = abs(moveDiff)==2
-
-		if(condition1&condition2)
+		if(castleBool)
 				
 			{
 			
@@ -465,13 +485,21 @@ movePiece <- function(board,numMoves,currRow,currCol,nextRow,nextCol)
 
 				board[currRow,nextCol-1] = board[currRow,8]
 
-				board[currRow,8] = ""				
+				numMoves[currRow,nextCol-1] = 1
+
+				board[currRow,8] = ""	
+
+				numMoves[currRow,8] = NA			
 
 				} else {
 
 				board[currRow,nextCol+1] = board[currRow,1]
 
+				numMoves[currRow,nextCol+1] = 1
+
 				board[currRow,1] = ""
+
+				numMoves[currRow,1] = NA
 				
 				}
 
@@ -581,8 +609,6 @@ movementRules <- function(board,numMoves,currRow,currCol)
 
 	if(length(grep(board[currRow,currCol],letters)==1)) enemy = LETTERS else enemy = letters
 
-
-
 	# Pawn movements
 
 	if((board[currRow,currCol]=="P")|(board[currRow,currCol]=="p")) allowed = PawnMovements(board,numMoves,currRow,currCol)
@@ -609,14 +635,12 @@ movementRules <- function(board,numMoves,currRow,currCol)
 
 	# Queen movements
 
-	if((board[currRow,currCol]=="Q")|(board[currRow,currCol]=="q")) allowed = QueenMovements(board,currRow,currCol,enemy)
+	if((board[currRow,currCol]=="Q")|(board[currRow,currCol]=="q")) allowed = QueenMovements(board,numMoves,currRow,currCol,enemy)
 
 
 	# King movements
 
 	if((board[currRow,currCol]=="K")|(board[currRow,currCol]=="k")) allowed = KingMovements(board,numMoves,currRow,currCol,enemy)
-
-
 
 	return(allowed)
 
@@ -784,11 +808,13 @@ RookMovements <- function(board,numMoves,currRow,currCol,enemy)
 
 			condition = board[nextRowPoss,currCol]==""
 
-			if(condition) allowed[nextRowPoss,currCol] = TRUE
-
-			if(!condition) 
-
+			if(condition) 
+			
 				{
+
+				allowed[nextRowPoss,currCol] = TRUE
+
+				} else {
 
 				# Can move if enemy in this position, cannot
 
@@ -800,7 +826,11 @@ RookMovements <- function(board,numMoves,currRow,currCol,enemy)
 
 					allowed[nextRowPoss,currCol] = TRUE
 
-					} else {break}
+					} else {
+
+					break
+
+					}
 
 				}
 
@@ -1106,7 +1136,7 @@ BishopMovements <- function(board,currRow,currCol,enemy)
 
 #===================== Queen movements ============================
 
-QueenMovements <- function(board,currRow,currCol,enemy) 
+QueenMovements <- function(board,numMoves,currRow,currCol,enemy) 
 
 	{
 
@@ -1120,7 +1150,7 @@ QueenMovements <- function(board,currRow,currCol,enemy)
 
 	allowedVector = which(allowed==TRUE)
 
-	allowed = RookMovements(board,currRow,currCol,enemy)
+	allowed = RookMovements(board,numMoves,currRow,currCol,enemy)
 
 	# append vector of rook movements to vector ofbishop movements
 
