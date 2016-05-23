@@ -206,14 +206,20 @@ greedyAImove = function(board,numMoves,current="upper")
 	equal = which(moveScores[,1]==moveScores[,1][topScore])
 
 	choice = sample(1:length(moveScores[,1][equal]),1)
+	print(choice)
 
-	return(list(currX = col(board)[mine[equal[choice]]], 
+	out = list(currX = col(board)[mine[equal[choice]]], 
 
 			currY = row(board)[mine[equal[choice]]], 
 
-			futureX = moveScores[choice,3], 
+			futureX = moveScores[equal[choice],3], 
 
-			futureY = moveScores[choice,2]))
+			futureY = moveScores[equal[choice],2])
+
+	print(paste0("current: x=",out$currX,"y=",out$currY))
+	print(paste0("future: x=",out$futureX,"y=",out$futureY))
+
+	return(out)
 		
 	}
 
